@@ -1,0 +1,66 @@
+Git Version Control Assignment - Step by Step
+This document contains the exact, correct commands to complete the student-management Git assignment from start to finish, including the proper way to resolve the intentional merge conflict.
+
+1. Initialize Git Repository and Configure User
+mkdir student-management
+cd student-management
+git init
+git config user.name "Your Name"
+git config user.email "your.email@example.com"
+
+
+2. Create Files, Stage, and Commit
+echo "<h1>Student Management</h1>" > index.html
+echo "body { font-family: Arial; }" > style.css
+echo "console.log('App started');" > app.js
+git add .
+git commit -m "Initial commit"
+
+
+3. Create feature-login Branch and Modify index.html
+git checkout -b feature-login
+echo "<form><input type='text' placeholder='Username'><button>Login</button></form>" >> index.html
+git add index.html
+git commit -m "Add login form to index.html"
+
+
+4. Switch to main, Modify app.js, and Commit
+Note: If your default branch is named 'master', ensure you run git branch -m master main before switching branches.
+git checkout main
+echo "console.log('Main branch updated');" >> app.js
+git add app.js
+git commit -m "Update app.js in main branch"
+
+
+5. Merge feature-login into main
+git merge feature-login -m "Merge feature-login into main"
+
+
+6. Create and Resolve Merge Conflict
+First, execute these commands to intentionally create the merge conflict across two branches:
+git checkout -b feature-styling
+echo "body { background-color: blue; }" > style.css
+git add style.css
+git commit -m "Change background to blue in feature-styling"
+
+git checkout main
+echo "body { background-color: red; }" > style.css
+git add style.css
+git commit -m "Change background to red in main"
+
+git merge feature-styling
+
+
+What to change in style.css:
+When Git tells you there is a conflict, open style.css in your text editor. Delete ALL of the text inside it—including the Git markers (<<<<<<<, =======, >>>>>>>) and the words HEAD and feature-styling.
+Replace the entire contents of the file with exactly this single line of clean CSS code:
+body { background-color: purple; }
+
+
+Complete the Merge
+Save the style.css file, go back to your terminal, and run these final commands to complete the merge and view your graph:
+git add style.css
+git commit -m "Resolve merge conflict in style.css"
+git log --graph --oneline
+
+
