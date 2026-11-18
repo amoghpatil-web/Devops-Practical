@@ -1,0 +1,81 @@
+Kubernetes Basics Assignment - Step by Step (Docker & Minikube)
+This document contains the exact commands required to complete the Kubernetes Basics assignment, specifically tailored for your Windows environment using Docker Desktop and Minikube.
+0. Install kubectl and Minikube
+If you haven't installed the tools yet, open your Command Prompt or PowerShell and run these commands to install them via the Windows Package Manager (winget):
+winget install Kubernetes.kubectl
+winget install Kubernetes.minikube
+
+
+Note: After installation, you must close and completely reopen your terminal window so it recognizes the new commands before continuing.
+Prerequisite: Start Docker and Minikube
+Before running any kubectl commands, ensure your local cluster is running.
+Open Docker Desktop from your Windows Start menu and wait until the bottom-left corner says "Engine running" (green indicator).
+Open a new Command Prompt or PowerShell window and run the following command to start your cluster:
+minikube start --driver=docker
+
+
+1. Check Cluster Status
+Verify that the cluster is healthy and the node is ready.
+kubectl cluster-info
+kubectl get nodes
+
+
+2. Create a Pod (Imperative Command)
+Create a standalone NGINX pod and verify its creation.
+kubectl run my-pod --image=nginx
+kubectl get pods
+
+
+3. Create a Deployment (YAML File)
+First, create a file named deployment.yaml using Notepad from your terminal:
+notepad deployment.yaml
+
+
+Paste the following exact YAML configuration into Notepad, save the file, and close it:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+
+
+Back in your terminal, apply the file to create the Deployment:
+kubectl apply -f deployment.yaml
+
+
+4. Create a Service and Access the App
+Expose the deployment by creating a NodePort service:
+kubectl expose deployment web-deployment --type=NodePort --port=80
+
+
+To satisfy the assignment's requirement to "Get the NodePort and access the app", run these commands to find the generated port and the node's internal IP:
+kubectl get services web-deployment
+kubectl get nodes -o wide
+
+
+Crucial Step for Minikube on Windows: Because you are running Minikube inside Docker, typing the NodeIP directly into your Windows browser might fail to connect. Instead, use Minikube's built-in tool to bridge the network and automatically open the application in your browser:
+minikube service web-deployment
+
+
+5. Show Final Outputs
+To generate the final terminal outputs required for your 30 marks, run these commands one by one and copy the results to submit:
+kubectl get pods
+kubectl get deployments
+kubectl get services
+kubectl describe pod my-pod
+
+
