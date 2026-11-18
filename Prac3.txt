@@ -1,0 +1,80 @@
+Kubernetes Assignment Q3 - CI/CD Pipeline with Jenkins and Maven
+This document contains the step-by-step implementation strictly for Q3, detailing how to set up a Jenkins Pipeline job using a Jenkinsfile from a GitHub repository, compile and package a Java application using Maven, and trigger builds automatically.
+1. Jenkins Global Tool Configuration
+Task: Configure Maven in Jenkins so the pipeline can execute mvn commands.
+Navigate to Manage Jenkins > Tools (or Global Tool Configuration).
+Scroll to the Maven section and click Add Maven.
+Name it exactly Maven3.
+Check Install automatically and save the configuration.
+2. Prepare GitHub Repository
+Task: Create a public GitHub repository (e.g., maven-cicd-pipeline) and add the required Maven and Jenkins configuration files to the root directory.
+pom.xml
+Create a pom.xml file to define the Java project for Maven:
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example</groupId>
+    <artifactId>my-app</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+    </properties>
+</project>
+
+
+Jenkinsfile
+Create a Jenkinsfile defining the Checkout, Build, Test, Package, and Deploy stages (using bat commands for the Windows environment):
+pipeline {
+    agent any
+    tools {
+        maven 'Maven3' 
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Build') {
+            steps {
+                bat 'mvn clean compile'
+            }
+        }
+        stage('Test') {
+            steps {
+                bat 'mvn test'
+            }
+        }
+        stage('Package') {
+            steps {
+                bat 'mvn package'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo 'Deploying application locally...'
+                bat 'if not exist deploy mkdir deploy'
+                bat 'copy target\\*.jar deploy\\'
+            }
+        }
+    }
+}
+
+
+3. Create the Jenkins Pipeline Job
+Task: Create a Jenkins Pipeline job named cicd-pipeline and link it to the GitHub repository.
+From the Jenkins Dashboard, click New Item, name it cicd-pipeline, select Pipeline, and click OK.
+Under Build Triggers, check Poll SCM and enter H/2 * * * * to poll GitHub every 2 minutes.
+Scroll down to the Pipeline section.
+Change the Definition to Pipeline script from SCM.
+Change SCM to Git and paste the GitHub repository URL.
+Ensure the Script Path is set to exactly Jenkinsfile.
+Click Save.
+4. Run Pipeline and Demonstrate Automatic Trigger
+Task: Execute the pipeline, view the Stage View, and trigger it automatically via a Git push.
+Click Build Now to run the initial pipeline manually. Verify that all stages (Checkout, Build, Test, Package, Deploy) turn green in the Stage View.
+To demonstrate the automatic trigger, open the GitHub repository and edit the README.md file.
+Commit the changes to the main branch.
+Wait for up to 2 minutes. Jenkins will automatically detect the new commit via SCM polling and trigger a new build (#2) on the dashboard.
