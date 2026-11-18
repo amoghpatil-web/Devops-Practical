@@ -1,0 +1,147 @@
+Kubernetes Assignment Q9 & Q10 - Monitoring & Logging (Docker Setup)
+This document contains the complete step-by-step instructions to deploy both the ELK Stack and Prometheus/Grafana using Docker Compose, adapting the Linux requirements perfectly for a Windows/Docker Desktop environment.
+
+Q9. Centralized Logging with ELK Stack
+1. Prepare the Workspace & Logstash Config
+Task: Configure logstash.conf to take input on port 5044, filter logs, and output to Elasticsearch.
+mkdir elk-assignment
+cd elk-assignment
+mkdir logs
+notepad logstash.conf
+
+
+Paste the following into logstash.conf:
+input {
+  file {
+    path => "/usr/share/logstash/logs/app.log"
+    start_position => "beginning"
+    sincedb_path => "/dev/null"
+  }
+}
+filter {
+  grok {
+    match => { "message" => "%{IPORHOST:clientip} - - 
+%HTTPDATE:timestamp
+ \"%{WORD:verb} %{URIPATHPARAM:request} HTTP/%{NUMBER:httpversion}\" %{NUMBER:response} %{NUMBER:bytes}" }
+  }
+}
+output {
+  elasticsearch {
+    hosts => ["http://elasticsearch:9200"]
+    index => "logs-apache"
+  }
+  stdout { codec => rubydebug }
+}
+
+
+2. Create Docker Compose File & Start Services
+Task: Install and start Elasticsearch, Logstash, and Kibana using Docker Compose.
+notepad docker-compose.yml
+
+
+Paste the following into docker-compose.yml:
+version: '3.7'
+services:
+  elasticsearch:
+    image: elasticsearch:7.17.10
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+  logstash:
+    image: logstash:7.17.10
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./logs:/usr/share/logstash/logs
+    ports:
+      - "5044:5044"
+    depends_on:
+      - elasticsearch
+  kibana:
+    image: kibana:7.17.10
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+
+docker compose up -d
+curl http://localhost:9200
+
+
+Verification: The curl command ensures Elasticsearch is running on port 9200.
+3. Kibana Configuration & Data View
+Task: Open Kibana on port 5601, create an Index Pattern / Data View for logs-* and visualize the data.
+Navigate to http://localhost:5601 in your browser.
+Go to Stack Management > Data Views and create a Data View named logs-*.
+Generate sample application logs by writing mock Apache log entries to C:\Users\Dev\elk-assignment\logs\app.log.
+Go to Discover to view total log count, and use Kibana Dashboards to create a Pie Chart showing response: 500 vs response: 200.
+
+
+
+Q10. Monitoring with Prometheus and Grafana
+1. Prepare the Workspace & Prometheus Config
+Task: Configure prometheus.yml to scrape metrics from itself and Node Exporter.
+mkdir prometheus-assignment
+cd prometheus-assignment
+notepad prometheus.yml
+
+
+Paste the following into prometheus.yml:
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "node_exporter"
+    static_configs:
+      - targets: ["node_exporter:9100"]
+
+
+2. Create Docker Compose File & Start Services
+Task: Install and run Prometheus, Node Exporter, and Grafana using Docker Compose.
+notepad docker-compose.yml
+
+
+Paste the following into docker-compose.yml:
+version: '3.8'
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+  
+  node_exporter:
+    image: prom/node-exporter:latest
+    ports:
+      - "9100:9100"
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+
+
+docker compose up -d
+
+
+3. Verify Prometheus Targets
+Task: Verify Prometheus and Node Exporter targets are UP.
+Open a browser and navigate to http://localhost:9090.
+Go to Status > Targets.
+Verify both prometheus and node_exporter show a green UP state.
+4. Configure Grafana & Import Dashboard
+Task: Login to Grafana, add Prometheus as a Data Source, and import Dashboard 1860.
+Navigate to http://localhost:3000 and log in with username admin and password admin.
+Go to Connections > Data Sources > Add data source > Prometheus.
+Set the HTTP URL to: http://prometheus:9090 (since Grafana is connecting through the internal Docker network).
+Click Save & test.
+In the left menu, click the + icon (Create) and select Import.
+Enter 1860 in the "Import via grafana.com" field and click Load.
+Select your Prometheus data source from the dropdown at the bottom and click Import.
+Verification: Live graphs for CPU, Memory, Disk, and Network usage will immediately populate.
