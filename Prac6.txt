@@ -1,0 +1,159 @@
+DEVOPS PRACTICAL 6
+Multi-Container Web & Database Application Using Docker Compose
+Student: Amogh Patil   •   Roll No: 31011123045
+
+
+AIM: To build and orchestrate a multi-container application consisting of a Python Flask web server and a MySQL 8.4 database using Docker Compose, healthchecks, named volumes, and environment variables.
+
+
+Concept & Overview
+Modern applications rarely run inside a single container. Docker Compose allows you to define, network, and launch multiple interdependent containers (a Flask frontend/backend service and a MySQL database service) using a single declarative YAML file (compose.yaml) and one command.
+Project Architecture & File Structure
+File Name
+Purpose
+app.py
+Python Flask web application that connects to the MySQL container and renders connection status.
+requirements.txt
+Lists Python dependencies (flask and mysql-connector-python) installed during image build.
+Dockerfile
+Builds the custom Python 3.12-slim Docker image for the Flask web service.
+compose.yaml
+Defines both 'web' and 'db' services, port mappings, persistent volume, and DB healthcheck.
+.env
+Stores sensitive database passwords securely outside the YAML configuration.
+
+
+Step-by-Step Implementation
+Step 1: Verify Docker Desktop & Engine Mode
+Open Docker Desktop and ensure the engine is running in Linux containers mode. Open Command Prompt (cmd) and verify Docker CLI and Compose versions.
+Terminal Commands — Verify Docker & Create Project Directory
+# Verify Docker & Docker Compose
+docker --version
+docker compose version
+docker info
+
+# Create and enter the project directory on Desktop
+cd %USERPROFILE%\Desktop
+mkdir multi-container-app
+cd multi-container-app
+
+
+Step 2: Create the Flask Application (app.py)
+Run 'notepad app.py' in Command Prompt and paste the Python code below. Notice that host='db' matches the MySQL service name in compose.yaml—Docker's internal DNS automatically resolves 'db' to the database container's IP.
+app.py
+from flask import Flask
+import mysql.connector
+import os
+
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    try:
+        db = mysql.connector.connect(
+            host="db",
+            user="appuser",
+            password=os.environ["DB_PASSWORD"],
+            database="mydatabase"
+        )
+        cursor = db.cursor()
+        cursor.execute("SELECT 'Connected to MySQL successfully!'")
+        result = cursor.fetchone()[0]
+        cursor.close()
+        db.close()
+        return f"""
+        <html>
+        <body style="font-family:Arial;text-align:center;margin-top:100px">
+            <h1>Docker Multi-Container Application</h1>
+            <h2>Flask Web Server Running</h2>
+            <p style="color:green">{result}</p>
+        </body>
+        </html>
+        """
+    except mysql.connector.Error as e:
+        return f"Database connection failed: {e}", 503
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
+
+
+Step 3: Create Python Dependencies File (requirements.txt)
+Run 'notepad requirements.txt' and add the required packages:
+requirements.txt
+flask
+mysql-connector-python
+
+
+Step 4: Create the Web Service Dockerfile
+Run 'notepad Dockerfile' (save as 'All Files' without a .txt extension) to containerize the Flask app.
+Dockerfile
+FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY app.py .
+EXPOSE 5000
+CMD ["python", "app.py"]
+
+
+Step 5: Create the Docker Compose Configuration (compose.yaml)
+Run 'notepad compose.yaml' and paste the clean, properly indented YAML below. Note: In the source manual PDF, the YAML lines around volumes and healthcheck had formatting/indentation issues—the corrected, valid YAML below fixes those syntax issues so Docker Compose runs smoothly.
+compose.yaml (Corrected & Properly Indented)
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: mydatabase
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$MYSQL_ROOT_PASSWORD\" mysqladmin ping -h localhost --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  mysql_data:
+
+
+Step 6: Create the Environment File (.env) & Launch Containers
+Run 'notepad .env' to store the database credentials, then build and start both containers in detached mode.
+.env
+MYSQL_ROOT_PASSWORD=ChangeThisRootPassword123
+DB_PASSWORD=ChangeThisAppPassword456
+
+
+Launch Multi-Container Stack
+docker compose up -d --build
+
+
+Expected Output & Verification
+Docker Compose Startup Log
+[+] up 18/18
+ ✔ Image mysql:8.4                          Pulled
+ ✔ Image multi-container-app-web            Built
+ ✔ Network multi-container-app_default      Created
+ ✔ Volume multi-container-app_mysql_data    Created
+ ✔ Container multi-container-app-db-1       Healthy
+ ✔ Container multi-container-app-web-1      Started
+
+
+Step 7: Verify in Browser
+Open your web browser and navigate to http://localhost:5000. You will see the heading 'Docker Multi-Container Application', 'Flask Web Server Running', and the green status message 'Connected to MySQL successfully!'.
+Key DevOps Concepts Demonstrated: 1) Service Discovery: Flask connects to 'db' by hostname over an isolated bridge network. 2) Healthchecks: 'depends_on: condition: service_healthy' ensures Flask waits until MySQL is fully initialized before starting. 3) Data Persistence: Named volume 'mysql_data' preserves database records even if containers are restarted.
+
+
