@@ -1,0 +1,44 @@
+Q8. Kubernetes Scaling, Rolling Updates & Rollbacks (Windows/Minikube)
+This document contains the exact commands required to complete Q8 of your Kubernetes assignment, specifically adapted for the Windows Command Prompt (using findstr instead of grep) and including the prerequisite setup steps.
+Prerequisite: Setup Initial Deployment
+The assignment assumes the deployment already exists. Since we are testing locally, run these commands first to create the starting environment (a deployment named my-app with 2 replicas using nginx:1.25):
+kubectl create deployment my-app --image=nginx:1.25
+kubectl scale deployment my-app --replicas=2
+kubectl get deployment my-app
+
+
+1. Scale the deployment
+Task: Scale the deployment from 2 replicas to 5 replicas using kubectl scale and verify. (5 Marks)
+kubectl scale deployment my-app --replicas=5
+kubectl get deployment my-app
+kubectl get pods
+
+
+Verification: You should see 5/5 under the READY column and 5 individual pods in the Running state.
+2. Perform a Rolling Update
+Task: Change image from nginx:1.25 to nginx:1.27 using kubectl set image. (8 Marks)
+kubectl set image deployment/my-app nginx=nginx:1.27
+kubectl describe deployment my-app | findstr Image
+
+
+Note: We use findstr here because grep is not supported natively in the Windows Command Prompt. This command verifies the new image is applied.
+3. Monitor the Rollout
+Task: Monitor the rollout using kubectl rollout status and kubectl get pods -w. (5 Marks)
+kubectl rollout status deployment/my-app
+kubectl get pods -w
+
+
+Crucial Tip: The -w command locks the terminal to watch real-time updates. Press Ctrl + C to exit watch mode when done.
+4. Check Rollout History
+Task: Check rollout history using kubectl rollout history. (4 Marks)
+kubectl rollout history deployment/my-app
+
+
+Verification: This will display the list of revisions (e.g., 1 for nginx:1.25, and 2 for nginx:1.27).
+5. Perform a Rollback
+Task: Perform a Rollback to the previous version using kubectl rollout undo and verify the image is reverted. (8 Marks)
+kubectl rollout undo deployment/my-app
+kubectl describe deployment my-app | findstr Image
+
+
+Verification: The final output should show the image is back to nginx:1.25.
