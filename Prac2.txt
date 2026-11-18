@@ -1,0 +1,86 @@
+Kubernetes Assignment Q2 & Q3 - Jenkins CI/CD Pipeline
+This document contains the complete step-by-step instructions to configure Jenkins, integrate Maven, and create both Freestyle and Pipeline jobs to satisfy the requirements for Q2 and Q3.
+Phase 1: Jenkins Global Tool Configuration (Crucial Setup)
+Before creating any jobs, Jenkins needs to know how to execute Maven commands.
+Go to the Jenkins Dashboard and click Manage Jenkins.
+Click on Tools (or Global Tool Configuration).
+Scroll down to the Maven section and click Add Maven.
+In the Name field, type exactly: Maven3 (Case-sensitive, no spaces).
+Leave Install automatically checked and select the latest version from the dropdown.
+Scroll to the bottom and click Save.
+
+Phase 2: Prepare GitHub Repository
+Create a new public GitHub repository named maven-cicd-pipeline and add the following two files to the root of the repository.
+1. pom.xml
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example</groupId>
+    <artifactId>my-app</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+    </properties>
+</project>
+
+
+2. Jenkinsfile
+pipeline {
+    agent any
+    tools {
+        maven 'Maven3' 
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Build') {
+            steps {
+                bat 'mvn clean compile'
+            }
+        }
+        stage('Test') {
+            steps {
+                bat 'mvn test'
+            }
+        }
+        stage('Package') {
+            steps {
+                bat 'mvn package'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo 'Deploying application locally...'
+                bat 'if not exist deploy mkdir deploy'
+                bat 'copy target\\*.jar deploy\\'
+            }
+        }
+    }
+}
+
+
+
+Q2. Setting Up Jenkins + CI Job (Freestyle)
+Task: Create a Freestyle job named java-build-job connected to GitHub and Maven.
+From the Jenkins Dashboard, click New Item. Name it java-build-job and select Freestyle project. Click OK.
+Source Code Management: Select Git and paste your GitHub repository URL. Ensure the branch is set correctly (e.g., */main).
+Build Triggers: Check Poll SCM and enter H/2 * * * * in the schedule box to poll every 2 minutes.
+Build Steps: Click Add build step and select Invoke top-level Maven targets.
+Select Maven3 from the Maven Version dropdown.
+In the Goals field, enter: clean compile package.
+Click Save and run Build Now to verify the console output.
+
+Q3. Creating CI/CD Pipeline with Jenkins and Maven
+Task: Create a Jenkins Pipeline job named cicd-pipeline.
+From the Jenkins Dashboard, click New Item. Name it cicd-pipeline and select Pipeline. Click OK.
+Build Triggers: Check Poll SCM and enter H/2 * * * *.
+Pipeline: Scroll down to the Pipeline section. Change the Definition to Pipeline script from SCM.
+Change SCM to Git and paste your GitHub repository URL.
+Ensure the Script Path is set to exactly Jenkinsfile.
+Click Save and run Build Now.
+Verification: Go to the Stage View on the job page to see the Checkout, Build, Test, Package, and Deploy stages light up green. Push a small change to the README.md on GitHub to demonstrate the automatic trigger firing within 2 minutes.
