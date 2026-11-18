@@ -1,0 +1,92 @@
+DEVOPS PRACTICAL 4
+Building and Running a Docker Image via Jenkins CI/CD Pipeline
+Student: Amogh Patil   •   Roll No: 31011123045
+
+
+AIM: To automate the creation of a custom NGINX Docker image hosting a static HTML webpage and deploy it as a running Docker container using GitHub, Jenkins, and Docker Desktop.
+
+
+Concept & Overview
+In this practical, you build an end-to-end containerized CI/CD workflow. Application source code (index.html), container build instructions (Dockerfile), and automation logic (Jenkinsfile) are stored in GitHub. Jenkins pulls the repository, executes Docker CLI commands to build the image, and launches a container mapped to port 8081.
+Repository File Structure
+File Name
+Purpose
+index.html
+The static web page served by the NGINX web server inside the container.
+Dockerfile
+Blueprint defining the base image (nginx:alpine), file copy instructions, and exposed port (80).
+Jenkinsfile
+Automates cloning the code, building the Docker image, and running the container.
+
+
+Step-by-Step Implementation
+Step 1: Ensure Docker Desktop is Running
+Before triggering Jenkins, open Docker Desktop on Windows and wait until the engine status in the bottom-left corner shows 'Engine running' (green).
+Step 2: Create GitHub Repository & Add index.html
+Create a new public GitHub repository (e.g., Amogh-Jenkins-Demo or Adrios12-Jenkins-Demo) initialized with a README, then add index.html.
+Create File: Click 'Add file' -> 'Create new file' and name it index.html.
+Add HTML Markup: Paste the HTML code below and commit the file to the main branch.
+index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adrios12 - Jenkins CI/CD</title>
+</head>
+<body>
+    <h1>Adrios12 Website</h1>
+    <p>Docker build and Jenkins CI/CD pipeline is working!</p>
+</body>
+</html>
+
+
+Step 3: Create the Dockerfile in GitHub
+Add a second file in the root directory named exactly Dockerfile (no file extension) to package the HTML file into a lightweight Alpine NGINX image.
+Dockerfile
+FROM nginx:alpine
+COPY . /usr/share/nginx/html/
+EXPOSE 80
+
+
+Step 4: Create the Jenkinsfile in GitHub
+Add a third file named Jenkinsfile in the repository root so Jenkins knows how to build the Docker image and run the container on host port 8081.
+Jenkinsfile
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                bat 'docker build -t adrios12-app:latest .'
+                echo 'Docker image built successfully!'
+            }
+        }
+        stage('Run Docker Container') {
+            steps {
+                bat 'docker rm -f adrios12-container || exit 0'
+                bat 'docker run -d --name adrios12-container -p 8081:80 adrios12-app:latest'
+            }
+        }
+    }
+}
+
+
+Step 5: Configure Jenkins Pipeline from SCM & Build
+Connect your GitHub repository to Jenkins and trigger the automated Docker build.
+Create Pipeline Job: In Jenkins, click 'New Item' -> name it Adrios12-Jenkins-Demo -> select 'Pipeline' -> click 'OK'.
+Configure SCM: Under Pipeline, select 'Pipeline script from SCM', choose 'Git', and enter your repository URL (e.g., https://github.com/amoghpatil-web/Adrios12-Jenkins-Demo.git).
+Set Branch Specifier: Change Branch Specifier from */master to */main and keep Script Path as Jenkinsfile.
+Apply & Build Now: Click 'Apply', 'Save', and then 'Build Now'.
+Step 6: Verify Image, Container, and Live Webpage
+Confirm deployment across Jenkins, Docker Desktop, and your browser:
+Jenkins Console Output: Verify the build log prints 'Docker image built successfully!' and 'Finished: SUCCESS'.
+Docker Desktop Verification: Open Docker Desktop -> 'Images' to see adrios12-app:latest, and 'Containers' to see adrios12-container running with port mapping 8081:80.
+Browser Verification: Open your browser and visit http://localhost:8081 to view your live containerized webpage.
+Port Mapping Explained (-p 8081:80): NGINX listens on port 80 inside the isolated Docker container. Mapping '-p 8081:80' forwards traffic from port 8081 on your Windows host machine to port 80 inside the container, avoiding conflicts with Jenkins (port 8080).
+
+
