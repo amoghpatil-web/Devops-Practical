@@ -1,0 +1,100 @@
+DEVOPS PRACTICAL 5
+Automating Software Installation Using an Ansible Playbook
+Student: Amogh Patil   •   Roll No: 31011123045
+
+
+AIM: To install Ansible on Ubuntu Linux and write a declarative YAML playbook that automates installing, enabling, and verifying the Apache2 web server.
+
+
+Concept & Overview
+Ansible is an agentless IT automation and configuration management tool. Using human-readable YAML files called 'Playbooks', system administrators can define the desired state of servers (such as installed packages and running services) and apply them reliably without manual SSH steps.
+Step-by-Step Implementation
+Step 1: Update Ubuntu & Install Ansible
+Open the Ubuntu Terminal (in VMware Workstation / VirtualBox or native Ubuntu) and install Ansible from the official APT repositories.
+Terminal Commands — Install & Verify Ansible
+# 1. Refresh local package index
+sudo apt update
+
+# 2. Install Ansible non-interactively
+sudo apt install ansible -y
+
+# 3. Verify Ansible installation
+ansible --version
+
+
+Step 2: Create the Ansible Playbook (install_apache.yml)
+Create a new YAML playbook file using the nano text editor.
+Open Editor: Run: nano install_apache.yml
+Write Playbook Code: Paste the YAML configuration below. Pay strict attention to indentation (use spaces, never tabs).
+Save & Exit: Press Ctrl + O, then Enter to save, and Ctrl + X to exit nano.
+install_apache.yml
+---
+- name: Automate Apache Installation
+  hosts: localhost
+  connection: local
+  become: yes
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Apache2
+      apt:
+        name: apache2
+        state: present
+
+    - name: Start Apache service
+      service:
+        name: apache2
+        state: started
+        enabled: yes
+
+    - name: Check Apache website
+      uri:
+        url: http://localhost
+        status_code: 200
+
+
+Step 3: Playbook Line-by-Line Explanation
+Each directive in install_apache.yml performs a specific automation role:
+hosts: localhost & connection: local: Targets the local Ubuntu machine directly without needing an external SSH inventory.
+become: yes: Elevates privileges to root (sudo) so Ansible can install system packages and manage services.
+apt module: Updates the package cache and ensures the 'apache2' package is installed (state: present).
+service module: Starts the apache2 daemon immediately and enables it to auto-start on boot.
+uri module: Performs an automated HTTP health check against http://localhost expecting HTTP status 200 OK.
+Step 4: Execute the Playbook & Verify Apache2
+Run the playbook and supply your sudo password when prompted.
+Execute Playbook & Check Service Status
+# Run the playbook (prompts for BECOME/sudo password)
+ansible-playbook install_apache.yml --ask-become-pass
+
+# Verify Apache2 systemd service status
+sudo systemctl status apache2
+
+
+Expected Terminal & Browser Output
+Ansible Play Recap Output
+PLAY [Automate Apache Installation] ********************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+
+TASK [Update apt cache] ********************************************************
+changed: [localhost]
+
+TASK [Install Apache2] *********************************************************
+ok: [localhost]
+
+TASK [Start Apache service] ****************************************************
+ok: [localhost]
+
+TASK [Check Apache website] ****************************************************
+ok: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
+
+Step 5: Verify in Web Browser
+Open Firefox inside Ubuntu and navigate to http://localhost. The 'Apache2 Default Page (It works!)' welcome page will load, confirming that Ansible successfully provisioned and started the web server.
